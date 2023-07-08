@@ -210,7 +210,17 @@ mod test {
 
         let event = doggo.to_insert_event();
         let json = WsBody::new(event).json();
-        insta::assert_snapshot!(json, @r###"{"data":{"verb":{"type":"insert","payload":{"location":{"id":1,"txn_id":null,"collection":"Dogs"},"data":{"id":1,"name":"Barky","breed":"Poodle"}}}}}"###);
+        insta::assert_snapshot!(json, @r###"{"data":{"verb":{"type":"insert","payload":{"location":{"id":null,"txn_id":null,"collection":"Dogs"},"data":{"id":1,"name":"Barky","breed":"Poodle"}}}}}"###);
+
+        let doggo = DoggoRecord {
+            id: 1,
+            name: "Barky".to_string(),
+            breed: "Poodle".to_string(),
+        };
+        let event = doggo.to_upsert_event();
+        let json = WsBody::new(event).json();
+
+        insta::assert_snapshot!(json, @r###"{"data":{"verb":{"type":"upsert","payload":{"location":{"id":1,"txn_id":null,"collection":"Dogs"},"data":{"id":1,"name":"Barky","breed":"Poodle"}}}}}"###);
     }
 }
 
