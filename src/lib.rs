@@ -145,7 +145,7 @@ pub trait Syncable: Appendable {
         ) -> EventVerb<Self, Self::Collection>,
     ) -> Event<Self, Self::Collection> {
         let location = Location {
-            id: self.id(),
+            id: Some(self.id()),
             txn_id: None,
             collection: self.collection(),
         };
