@@ -81,6 +81,15 @@ impl<T: Serialize> WsBody<T> {
     }
 }
 
+impl<T> From<T> for WsBody<T>
+where
+    T: Serialize,
+{
+    fn from(data: T) -> Self {
+        Self::new(data)
+    }
+}
+
 // trait PersistedLocatable {
 //     fn id(&self) -> u32;
 
@@ -136,7 +145,7 @@ pub trait Syncable: Appendable {
         ) -> EventVerb<Self, Self::Collection>,
     ) -> Event<Self, Self::Collection> {
         let location = Location {
-            id: None,
+            id: self.id(),
             txn_id: None,
             collection: self.collection(),
         };
@@ -149,7 +158,7 @@ mod test {
     use serde::Serialize;
     use ts_rs::TS;
 
-    use crate::{Appendable, Location, Syncable};
+    use crate::{Appendable, Syncable};
 
     #[derive(Serialize, TS)]
     struct DoggoRecord {
