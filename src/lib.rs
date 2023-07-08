@@ -1,11 +1,11 @@
-use rsb_derive::Builder;
+// use rsb_derive::Builder;
 use serde::Serialize;
 use ts_rs::TS;
 
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
-pub struct Location<C> {
-    id: Option<u32>,
+pub struct Location<ID, C> {
+    id: Option<ID>,
     txn_id: Option<u32>,
     collection: C,
 }
@@ -19,23 +19,23 @@ pub struct Location<C> {
 
 // struct
 
-#[derive(Debug, Clone, Serialize, Builder, TS)]
+#[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
-pub struct UpdatableResource<T, C>
+pub struct UpdatableResource<I, T, C>
 where
     T: TS,
 {
-    location: Location<C>,
+    location: Location<I, C>,
     data: T,
 }
 
-#[derive(Debug, Clone, Serialize, Builder, TS)]
+#[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
-pub struct AppendableResource<T, C>
+pub struct AppendableResource<ID, T, C>
 where
     T: TS,
 {
-    location: Location<C>,
+    location: Location<ID, C>,
     data: T,
 }
 
@@ -47,21 +47,21 @@ pub struct ResourceId(u32);
 // this produces a json object with a "type" field and a "payload" field
 #[serde(tag = "type", content = "payload", rename_all = "snake_case")]
 #[ts(export)]
-pub enum EventVerb<T: Serialize + TS, C> {
-    Insert(AppendableResource<T, C>),
-    Update(UpdatableResource<T, C>),
-    Upsert(UpdatableResource<T, C>),
+pub enum EventVerb<ID, T: Serialize + TS, C> {
+    Insert(AppendableResource<ID, T, C>),
+    Update(UpdatableResource<ID, T, C>),
+    Upsert(UpdatableResource<ID, T, C>),
     Delete(ResourceId),
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
-pub struct Event<T: Serialize + TS, C> {
-    verb: EventVerb<T, C>,
+pub struct Event<ID, T: Serialize + TS, C> {
+    verb: EventVerb<ID, T, C>,
 }
 
-impl<T: Serialize + TS, C> Event<T, C> {
-    pub fn new(verb: EventVerb<T, C>) -> Self {
+impl<ID, T: Serialize + TS, C> Event<ID, T, C> {
+    pub fn new(verb: EventVerb<ID, T, C>) -> Self {
         Self { verb }
     }
 }
@@ -107,49 +107,57 @@ pub trait Appendable: Serialize + Sized + TS {
 
     fn collection(&self) -> Self::Collection;
 
-    fn to_insert_event(self) -> Event<Self, Self::Collection> {
+    fn to_insert_event(self) -> Event<(), Self, Self::Collection> {
         <Self as Appendable>::to_event(self, EventVerb::Insert)
     }
 
     fn to_event(
         self,
         build_verb: impl FnOnce(
-            AppendableResource<Self, Self::Collection>,
-        ) -> EventVerb<Self, Self::Collection>,
-    ) -> Event<Self, Self::Collection> {
+            AppendableResource<(), Self, Self::Collection>,
+        ) -> EventVerb<(), Self, Self::Collection>,
+    ) -> Event<(), Self, Self::Collection> {
         let location = Location {
             id: None,
             txn_id: None,
             collection: self.collection(),
         };
-        let verb = build_verb(AppendableResource::new(location, self));
+        let verb = build_verb(AppendableResource {
+            location,
+            data: self,
+        });
         Event::new(verb)
     }
 }
 
 pub trait Syncable: Appendable {
-    fn id(&self) -> u32;
+    type Id;
 
-    fn to_upsert_event(self) -> Event<Self, Self::Collection> {
+    fn id(&self) -> Self::Id;
+
+    fn to_upsert_event(self) -> Event<Self::Id, Self, Self::Collection> {
         <Self as Syncable>::to_event(self, EventVerb::Upsert)
     }
 
-    fn to_update_event(self) -> Event<Self, Self::Collection> {
+    fn to_update_event(self) -> Event<Self::Id, Self, Self::Collection> {
         <Self as Syncable>::to_event(self, EventVerb::Update)
     }
 
     fn to_event(
         self,
         build_verb: impl FnOnce(
-            UpdatableResource<Self, Self::Collection>,
-        ) -> EventVerb<Self, Self::Collection>,
-    ) -> Event<Self, Self::Collection> {
+            UpdatableResource<Self::Id, Self, Self::Collection>,
+        ) -> EventVerb<Self::Id, Self, Self::Collection>,
+    ) -> Event<Self::Id, Self, Self::Collection> {
         let location = Location {
             id: Some(self.id()),
             txn_id: None,
             collection: self.collection(),
         };
-        let verb = build_verb(UpdatableResource::new(location, self));
+        let verb = build_verb(UpdatableResource {
+            location,
+            data: self,
+        });
         Event::new(verb)
     }
 }
@@ -183,6 +191,8 @@ mod test {
     }
 
     impl Syncable for DoggoRecord {
+        type Id = u32;
+
         fn id(&self) -> u32 {
             self.id
         }
