@@ -235,8 +235,9 @@ pub trait Listener {
 pub trait Service {
     type Item: Appendable;
     type Listener: Listener<Item = Self::Item>;
+    type Error;
 
-    fn publish(&self, event: Self::Item) -> Result<(), ()>;
+    fn publish(&self, event: Self::Item) -> Result<(), Self::Error>;
     fn listener(&self) -> Self::Listener;
 }
 
