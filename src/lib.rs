@@ -10,15 +10,6 @@ pub struct Location<ID, C> {
     collection: C,
 }
 
-// #[derive(Debug, Clone, Serialize, TS)]
-// #[ts(export)]
-// struct EphemeralLocation<C> {
-//     txn_id: Option<u32>,
-//     collection: C,
-// }
-
-// struct
-
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
 pub struct UpdatableResource<I, T, C>
@@ -89,18 +80,6 @@ where
         Self::new(data)
     }
 }
-
-// trait PersistedLocatable {
-//     fn id(&self) -> u32;
-
-//     fn location(&self) -> Location<Self::Collection> {
-//         Location {
-//             id: self.id(),
-//             txn_id: None,
-//             collection: self.collection(),
-//         }
-//     }
-// }
 
 pub trait Appendable: Serialize + Sized + TS {
     type Collection;
@@ -232,55 +211,10 @@ pub trait Listener {
     async fn recv(&mut self) -> Result<Self::Item, Self::Error>;
 }
 
-pub trait Service {
-    type Item: Appendable;
-    type Listener: Listener<Item = Self::Item>;
+pub trait Service<T: Appendable> {
+    type Listener: Listener<Item = T>;
     type Error;
 
-    fn publish(&self, event: Self::Item) -> Result<(), Self::Error>;
+    fn publish(&self, event: T) -> Result<(), Self::Error>;
     fn listener(&self) -> Self::Listener;
 }
-
-// pub struct Service {
-//     ch_file_event: broadcast::Sender<FileEvent>,
-// }
-
-// impl Service {
-//     pub fn new() -> Self {
-//         let (tx, _) = broadcast::channel(100);
-//         Self { ch_file_event: tx }
-//     }
-
-//     fn file_event_sender(&self) -> &broadcast::Sender<FileEvent> {
-//         &self.ch_file_event
-//     }
-
-//     pub fn listener_file_event(&self) -> Listener<FileEvent> {
-//         let ch = self.ch_file_event.subscribe();
-//         Listener::new(ch)
-//     }
-
-//     pub fn file_uploaded(
-//         &self,
-//         file_name: &str,
-//         id: u32,
-//     ) -> Result<usize, broadcast::error::SendError<FileEvent>> {
-//         self.file_event_sender()
-//             .send(FileEvent::new(FileStatus::Uploaded, file_name, id))
-//     }
-
-//     pub fn file_embedded(
-//         &self,
-//         file_name: &str,
-//         id: u32,
-//     ) -> Result<usize, broadcast::error::SendError<FileEvent>> {
-//         self.file_event_sender()
-//             .send(FileEvent::new(FileStatus::Embedded, file_name, id))
-//     }
-// }
-
-// impl Default for Service {
-//     fn default() -> Self {
-//         Self::new()
-//     }
-// }
