@@ -67,6 +67,7 @@ impl<T: Serialize> WsBody<T> {
         Self { data }
     }
 
+    // TODO: this should return a result type
     pub fn json(&self) -> String {
         serde_json::to_string(&self).expect("Could not serialize WsBody<T> to JSON")
     }
