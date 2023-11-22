@@ -12,11 +12,11 @@ pub struct Location<ID, C> {
 
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
-pub struct UpdatableResource<I, T, C>
+pub struct UpdatableResource<ID, T, C>
 where
     T: TS,
 {
-    location: Location<I, C>,
+    location: Location<ID, C>,
     data: T,
 }
 
@@ -211,7 +211,7 @@ pub trait Listener {
     async fn recv(&mut self) -> Result<Self::Item, Self::Error>;
 }
 
-pub trait Service<T: Appendable> {
+pub trait Service<T> {
     type Listener: Listener<Item = T>;
     type Error;
 
