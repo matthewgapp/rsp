@@ -66,7 +66,7 @@ impl<ID, T: Serialize + TS, C> Event<ID, T, C> {
         Self::new(verb)
     }
 
-    pub fn to_ws_body(self) -> WsBody<Self>
+    pub fn into_ws_body(self) -> WsBody<Self>
     where
         Self: Serialize,
     {
