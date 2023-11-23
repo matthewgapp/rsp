@@ -3,4 +3,4 @@ import type { AppendableResource } from "./AppendableResource";
 import type { ResourceId } from "./ResourceId";
 import type { UpdatableResource } from "./UpdatableResource";
 
-export type EventVerb<ID, T, C> = { type: "insert", payload: AppendableResource<ID, T, C> } | { type: "update", payload: UpdatableResource<ID, T, C> } | { type: "upsert", payload: UpdatableResource<ID, T, C> } | { type: "delete", payload: ResourceId };
+export type EventVerb<ID, T, C> = { "type": "insert", "payload": AppendableResource<ID, T, C> } | { "type": "update", "payload": UpdatableResource<ID, T, C> } | { "type": "upsert", "payload": UpdatableResource<ID, T, C> } | { "type": "delete", "payload": ResourceId };
