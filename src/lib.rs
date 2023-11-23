@@ -55,6 +55,23 @@ impl<ID, T: Serialize + TS, C> Event<ID, T, C> {
     pub fn new(verb: EventVerb<ID, T, C>) -> Self {
         Self { verb }
     }
+
+    pub fn new_insert_event(data: T, collection: C) -> Self {
+        let location = Location {
+            id: None,
+            txn_id: None,
+            collection,
+        };
+        let verb = EventVerb::Insert(AppendableResource { location, data });
+        Self::new(verb)
+    }
+
+    pub fn to_ws_body(self) -> WsBody<Self>
+    where
+        Self: Serialize,
+    {
+        WsBody::new(self)
+    }
 }
 
 #[derive(Serialize)]
@@ -63,7 +80,7 @@ pub struct WsBody<T: Serialize> {
 }
 
 impl<T: Serialize> WsBody<T> {
-    pub fn new(data: T) -> Self {
+    fn new(data: T) -> Self {
         Self { data }
     }
 
